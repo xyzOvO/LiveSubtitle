@@ -64,6 +64,9 @@
 - **[Releases](https://github.com/xyzOvO/LiveSubtitle/releases/latest)** 下载最新 APK（debug 签名，可直接安装）
 - 也可以自行构建（见 [🛠 构建](#build)），但需要先下载 648 MB 模型，耗时主要在网络上
 
+> 装好之后，**主界面最底部常驻一行 `github.com/xyzOvO/LiveSubtitle · 查看新版本`**，点一下直接跳系统浏览器。
+> 想确认自己装的是不是最新版，从这一行过去看一眼就行，不必记住版本号。
+
 安装后要放行的四件事，少一件就没字幕：
 
 1. **录音权限**：内录走 `AudioPlaybackCapture`，系统仍然要求 `RECORD_AUDIO`，首次点「开始字幕」会弹窗。

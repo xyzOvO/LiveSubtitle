@@ -160,6 +160,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
         }
         findViewById<Button>(R.id.btn_export).setOnClickListener { exportSrt() }
+        findViewById<TextView>(R.id.repo_link).setOnClickListener { openRepo() }
         btnTextTranslate.setOnClickListener { translateText() }
         btnTextClear.setOnClickListener {
             etTextInput.setText("")
@@ -357,6 +358,21 @@ class MainActivity : AppCompatActivity() {
                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
         } catch (_: Throwable) {}
+    }
+
+    /**
+     * 底部项目地址：交给系统浏览器打开，本应用自身不需要 INTERNET 权限。
+     * 万一设备上没有能处理 http(s) 的应用，退化成复制地址——点了至少要有反应。
+     */
+    private fun openRepo() {
+        val url = getString(R.string.repo_url)
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: Throwable) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("repo", url))
+            Toast.makeText(this, getString(R.string.repo_copied), Toast.LENGTH_SHORT).show()
+        }
     }
 
     private val exportLauncher =

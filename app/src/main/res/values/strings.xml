@@ -81,4 +81,9 @@
     <string name="status_stopped">已停止 · 运行时零联网</string>
     <string name="status_neural">神经翻译（本地 ONNX · 运行时零联网）</string>
     <string name="status_error_model">模型加载失败，已切到词典演示模式</string>
+
+    <!-- 底部项目地址：使用者自己去看有没有新版 -->
+    <string name="repo_url">https://github.com/xyzOvO/LiveSubtitle</string>
+    <string name="repo_link">github.com/xyzOvO/LiveSubtitle · 查看新版本</string>
+    <string name="repo_copied">地址已复制：github.com/xyzOvO/LiveSubtitle</string>
 </resources>

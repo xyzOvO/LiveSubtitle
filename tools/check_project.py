@@ -288,7 +288,8 @@ README_PHRASES = [
     "许可证", "静态自检",
     "gradle :app:assembleDebug", "Android 10",
     "ANR", "真机", "KV cache", "两套",
-    "1.0.0", "github.com/xyzOvO/LiveSubtitle",
+    # 「1.0.0 起」是历史叙述，不随新版本号变化；别再钉裸版本号（1.0.1 之后必挂）。
+    "1.0.0 起", "github.com/xyzOvO/LiveSubtitle",
 ]
 
 def check_readme():

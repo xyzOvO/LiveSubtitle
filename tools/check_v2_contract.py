@@ -187,7 +187,7 @@ sakura = DOCS / "SAKURA_FEASIBILITY.md"
 require_text(sakura, ["CC BY-NC-SA 4.0", "IQ4_XS", "2201122C", "llama.cpp", "不内置"], "Sakura report")
 require_text(ROOT / "README.md", [
     "浮译", "双语", "spm.tsv", "Sakura", "decoder_with_past",
-    "1.0.0", "github.com/xyzOvO/LiveSubtitle",
+    "1.0.0 起", "github.com/xyzOvO/LiveSubtitle",
 ], "README")
 require_text(TOOLS / "get_models.py", ["ja", "spm.tsv", "decoder_with_past_model_quantized.onnx"], "get_models")
 require_text(TOOLS / "check_project.py", ["check_v2_contract", "mt/en", "mt/ja", "spm.tsv"], "check_project")

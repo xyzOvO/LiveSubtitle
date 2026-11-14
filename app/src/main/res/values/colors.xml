@@ -8,6 +8,7 @@
     <color name="blush">#e6b7b0</color>
     <color name="pale_blue">#b8c9ed</color>
     <color name="muted">#557077</color>
+    <color name="hairline">#E1EAE6</color>
     <color name="card">#FFFFFFFF</color>
     <color name="disabled">#889AA0</color>
 </resources>

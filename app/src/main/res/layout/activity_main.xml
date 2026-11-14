@@ -1,343 +1,372 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/mist"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:maxWidth="480dp"
-        android:layout_gravity="center_horizontal"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/status"
-            style="@style/StatusPill"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_chip"
-            android:text="@string/status_idle"
-            android:textSize="13sp"
-            android:textColor="@color/ink_teal" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/section_source"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="@color/ink_teal" />
-
-        <RadioGroup
-            android:id="@+id/lang_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="horizontal"
-            android:padding="8dp">
-
-            <!-- 默认英语排第一，顺序为「英语 → 日语」，与默认选中项一致。 -->
-            <RadioButton
-                android:id="@+id/lang_en"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:checked="true"
-                android:text="@string/source_english"
-                android:textColor="@color/ink_teal" />
-
-            <RadioButton
-                android:id="@+id/lang_ja"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:text="@string/source_japanese"
-                android:textColor="@color/ink_teal" />
-        </RadioGroup>
-
-        <!-- v3 起输出语言固定中文（英日互译模型已裁掉），不再给目标语言选项。 -->
-        <CheckBox
-            android:id="@+id/chk_bilingual"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:minHeight="44dp"
-            android:background="@drawable/bg_input"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:text="@string/bilingual"
-            android:textColor="@color/ink_teal" />
-
-        <CheckBox
-            android:id="@+id/chk_fast_cut"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:minHeight="44dp"
-            android:background="@drawable/bg_input"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:text="@string/fast_cut"
-            android:textColor="@color/ink_teal" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/mist"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_start"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:background="@drawable/bg_primary_button"
-                android:text="@string/start"
-                android:textColor="@color/card"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btn_stop"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_card"
-                android:text="@string/stop"
-                android:textColor="@color/deep_teal" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/btn_overlay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:minHeight="44dp"
-            android:background="@drawable/bg_chip"
-            android:text="@string/grant_overlay"
-            android:textColor="@color/ink_teal" />
-
-        <Button
-            android:id="@+id/btn_retry"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:minHeight="44dp"
-            android:background="@drawable/bg_chip"
-            android:text="@string/retry_translation"
-            android:textColor="@color/ink_teal" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="@string/section_text_translate"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="@color/ink_teal" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/text_translate_desc"
-            android:textSize="12sp"
-            android:textColor="@color/muted" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:orientation="vertical"
-            android:background="@drawable/bg_card"
-            android:padding="12dp">
+            android:maxWidth="480dp"
+            android:layout_gravity="center_horizontal"
+            android:padding="16dp">
 
-            <EditText
-                android:id="@+id/et_text_input"
+            <TextView
+                android:id="@+id/status"
+                style="@style/StatusPill"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minLines="2"
-                android:maxLines="5"
-                android:maxLength="500"
-                android:gravity="top|start"
-                android:padding="10dp"
+                android:background="@drawable/bg_chip"
+                android:text="@string/status_idle"
+                android:textSize="13sp"
+                android:textColor="@color/ink_teal" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="@string/section_source"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/ink_teal" />
+
+            <RadioGroup
+                android:id="@+id/lang_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="horizontal"
+                android:padding="8dp">
+
+                <!-- 默认英语排第一，顺序为「英语 → 日语」，与默认选中项一致。 -->
+                <RadioButton
+                    android:id="@+id/lang_en"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:checked="true"
+                    android:text="@string/source_english"
+                    android:textColor="@color/ink_teal" />
+
+                <RadioButton
+                    android:id="@+id/lang_ja"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:text="@string/source_japanese"
+                    android:textColor="@color/ink_teal" />
+            </RadioGroup>
+
+            <!-- v3 起输出语言固定中文（英日互译模型已裁掉），不再给目标语言选项。 -->
+            <CheckBox
+                android:id="@+id/chk_bilingual"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:minHeight="44dp"
                 android:background="@drawable/bg_input"
-                android:hint="@string/text_input_hint"
-                android:textSize="15sp"
-                android:textColor="@color/ink_teal"
-                android:textColorHint="@color/muted"
-                android:inputType="textMultiLine|textNoSuggestions" />
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="@string/bilingual"
+                android:textColor="@color/ink_teal" />
+
+            <CheckBox
+                android:id="@+id/chk_fast_cut"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="44dp"
+                android:background="@drawable/bg_input"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="@string/fast_cut"
+                android:textColor="@color/ink_teal" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="32dp"
                 android:orientation="horizontal">
 
                 <Button
-                    android:id="@+id/btn_text_translate"
+                    android:id="@+id/btn_start"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="44dp"
                     android:background="@drawable/bg_primary_button"
-                    android:text="@string/text_translate"
-                    android:textColor="@color/card" />
+                    android:text="@string/start"
+                    android:textColor="@color/card"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
 
                 <Button
-                    android:id="@+id/btn_text_clear"
+                    android:id="@+id/btn_stop"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="44dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_card"
+                    android:text="@string/stop"
+                    android:textColor="@color/deep_teal" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="44dp"
+                android:background="@drawable/bg_chip"
+                android:text="@string/grant_overlay"
+                android:textColor="@color/ink_teal" />
+
+            <Button
+                android:id="@+id/btn_retry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="44dp"
+                android:background="@drawable/bg_chip"
+                android:text="@string/retry_translation"
+                android:textColor="@color/ink_teal" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/section_text_translate"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="@color/ink_teal" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/text_translate_desc"
+                android:textSize="12sp"
+                android:textColor="@color/muted" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="12dp">
+
+                <EditText
+                    android:id="@+id/et_text_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="2"
+                    android:maxLines="5"
+                    android:maxLength="500"
+                    android:gravity="top|start"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_input"
+                    android:hint="@string/text_input_hint"
+                    android:textSize="15sp"
+                    android:textColor="@color/ink_teal"
+                    android:textColorHint="@color/muted"
+                    android:inputType="textMultiLine|textNoSuggestions" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_text_translate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minHeight="44dp"
+                        android:background="@drawable/bg_primary_button"
+                        android:text="@string/text_translate"
+                        android:textColor="@color/card" />
+
+                    <Button
+                        android:id="@+id/btn_text_clear"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minHeight="44dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_chip"
+                        android:text="@string/text_clear"
+                        android:textColor="@color/ink_teal" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_text_result"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:minHeight="48dp"
+                    android:padding="8dp"
+                    android:background="@drawable/bg_input"
+                    android:text="@string/text_result_placeholder"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="4dp"
+                    android:textColor="@color/ink_teal"
+                    android:textIsSelectable="true" />
+
+                <Button
+                    android:id="@+id/btn_text_copy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minHeight="44dp"
+                    android:enabled="false"
                     android:background="@drawable/bg_chip"
-                    android:text="@string/text_clear"
+                    android:text="@string/text_copy"
                     android:textColor="@color/ink_teal" />
             </LinearLayout>
 
             <TextView
-                android:id="@+id/tv_text_result"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="@string/section_glossary"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="@color/ink_teal" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/glossary_desc"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/muted" />
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:minHeight="48dp"
-                android:padding="8dp"
-                android:background="@drawable/bg_input"
-                android:text="@string/text_result_placeholder"
-                android:textSize="15sp"
-                android:lineSpacingExtra="4dp"
-                android:textColor="@color/ink_teal"
-                android:textIsSelectable="true" />
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="12dp">
 
-            <Button
-                android:id="@+id/btn_text_copy"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:minHeight="44dp"
-                android:enabled="false"
-                android:background="@drawable/bg_chip"
-                android:text="@string/text_copy"
-                android:textColor="@color/ink_teal" />
-        </LinearLayout>
+                <EditText
+                    android:id="@+id/et_glossary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="3"
+                    android:maxLines="8"
+                    android:gravity="top|start"
+                    android:padding="10dp"
+                    android:background="@drawable/bg_input"
+                    android:hint="@string/glossary_hint"
+                    android:textSize="14sp"
+                    android:textColor="@color/ink_teal"
+                    android:textColorHint="@color/muted"
+                    android:inputType="textMultiLine|textNoSuggestions" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/section_glossary"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="@color/ink_teal" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/glossary_desc"
-            android:textSize="12sp"
-            android:lineSpacingExtra="2dp"
-            android:textColor="@color/muted" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical"
-            android:background="@drawable/bg_card"
-            android:padding="12dp">
-
-            <EditText
-                android:id="@+id/et_glossary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minLines="3"
-                android:maxLines="8"
-                android:gravity="top|start"
-                android:padding="10dp"
-                android:background="@drawable/bg_input"
-                android:hint="@string/glossary_hint"
-                android:textSize="14sp"
-                android:textColor="@color/ink_teal"
-                android:textColorHint="@color/muted"
-                android:inputType="textMultiLine|textNoSuggestions" />
+                <TextView
+                    android:id="@+id/tv_glossary_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textSize="12sp"
+                    android:textColor="@color/muted" />
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/tv_glossary_status"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="12sp"
-                android:textColor="@color/muted" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/section_display"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="@color/ink_teal" />
-
-        <ScrollView
-            android:id="@+id/history_scroll"
-            android:layout_width="match_parent"
-            android:layout_height="260dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:fillViewport="true">
-
-            <TextView
-                android:id="@+id/history"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="@string/history_empty"
-                android:textSize="15sp"
-                android:lineSpacingExtra="5dp"
-                android:textColor="@color/ink_teal"
-                android:textIsSelectable="true" />
-        </ScrollView>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_copy"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:background="@drawable/bg_chip"
-                android:text="@string/copy"
+                android:layout_marginTop="32dp"
+                android:text="@string/section_display"
+                android:textSize="17sp"
+                android:textStyle="bold"
                 android:textColor="@color/ink_teal" />
 
-            <Button
-                android:id="@+id/btn_export"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="44dp"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_chip"
-                android:text="@string/export_srt"
-                android:textColor="@color/ink_teal" />
-        </LinearLayout>
+            <ScrollView
+                android:id="@+id/history_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="260dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:fillViewport="true">
 
-    </LinearLayout>
-</ScrollView>
+                <TextView
+                    android:id="@+id/history"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="@string/history_empty"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="5dp"
+                    android:textColor="@color/ink_teal"
+                    android:textIsSelectable="true" />
+            </ScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_copy"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:background="@drawable/bg_chip"
+                    android:text="@string/copy"
+                    android:textColor="@color/ink_teal" />
+
+                <Button
+                    android:id="@+id/btn_export"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_chip"
+                    android:text="@string/export_srt"
+                    android:textColor="@color/ink_teal" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 底部常驻：使用者自己去看有没有新版（点击交给系统浏览器，本应用无 INTERNET 权限） -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/hairline" />
+
+    <TextView
+        android:id="@+id/repo_link"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp"
+        android:text="@string/repo_link"
+        android:textColor="@color/muted"
+        android:textSize="12sp" />
+
+</LinearLayout>
