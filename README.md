@@ -196,7 +196,7 @@ python tools/install_sherpa_aar.py   # 下载 sherpa-onnx 1.12.33 AAR，校验 S
 python tools/get_models.py           # 下载并转换 ASR / MT / VAD 资产到 app/src/main/assets/
 ```
 
-`get_models.py` 需要 `pip install onnx sentencepiece`。它会顺带生成 `spm.tsv`、`source_vocab.tsv` 等派生文件——这些体积很小的文本资产是提交进仓库的，`test_spm_viterbi.py` 直接依赖它们。
+`get_models.py` 需要 `pip install sentencepiece`。它会顺带生成 `spm.tsv`、`source_vocab.tsv` 等派生文件——这些体积很小的文本资产是提交进仓库的，`test_spm_viterbi.py` 直接依赖它们。
 
 ### 💻 命令行
 

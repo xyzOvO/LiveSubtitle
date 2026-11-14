@@ -10,12 +10,13 @@ import subprocess
 import sys
 import zipfile
 
-# 默认验证 ASCII 副本；在中文路径工程内直接构建时用 LIVESUB_BUILD 指过来。
-BUILD = pathlib.Path(os.environ.get('LIVESUB_BUILD', 'D:/androiddev/build/LiveSubtitleAndroid'))
+# 默认验证本仓库自己的构建产物；跨目录构建时用 LIVESUB_BUILD 指过去。
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+BUILD = pathlib.Path(os.environ.get('LIVESUB_BUILD') or ROOT)
 APK = BUILD / 'app/build/outputs/apk/debug/app-debug.apk'
-DEST1 = pathlib.Path('D:/AI库/一次归档/LiveSubtitleAndroid/app/build/outputs/apk/debug/app-debug.apk')
-DEST2 = pathlib.Path('D:/AI库/一次归档/浮译-LiveSubtitle-debug.apk')
-SDK = pathlib.Path('D:/androiddev/sdk')
+# 可选的发布副本目标（多个路径用 os.pathsep 分隔）；留空就只验证、不复制。
+COPY_TARGETS = [pathlib.Path(p) for p in os.environ.get('LIVESUB_COPY_TO', '').split(os.pathsep) if p]
+SDK = pathlib.Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or 'D:/androiddev/sdk')
 AAPT2 = SDK / 'build-tools/34.0.0/aapt2.exe'
 APKSIGNER = SDK / 'build-tools/34.0.0/apksigner.bat'
 EXPECTED = [
@@ -101,9 +102,9 @@ if issues:
     print('VERIFY_FAIL:', len(issues), 'issue(s)')
     sys.exit(1)
 
-for dest in (DEST1, DEST2):
+for dest in COPY_TARGETS:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    # 在中文路径工程内直接构建时，DEST1 就是 APK 自己，跳过自拷贝。
+    # 目标就是 APK 自己时（例如工程建在发布目录里），跳过自拷贝。
     if dest.resolve() == APK.resolve():
         print('COPIED_SKIP_SELF', dest, APK.stat().st_size)
         continue

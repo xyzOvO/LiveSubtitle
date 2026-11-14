@@ -7,16 +7,22 @@ v2 asset contract:
   config.tsv      = decoder_start eos pad max_source max_target
   spm_source.bin  = original source.spm, for test/reference only (not runtime dependency)
 Needles checked by tools/check_v2_contract.py are in Kotlin/UI docs, not here.
+
+注意：这是一次性生成器。下面的 SPM_SRC / VOCAB_SRC / CONFIG_SRC 指向作者本机从
+HuggingFace 探测出来的原始文件，正常构建不走它——想复现模型资产请用 tools/get_models.py。
 """
 from __future__ import annotations
-import json, shutil, sys
+import json, os, shutil, sys
 from pathlib import Path
-sys.path.insert(0, 'D:/androiddev/mtprobe-libs')
-sys.path.insert(0, 'D:/androiddev/onnxprobe-libs')
+
+# 可选：额外依赖目录（离线调试用）；正式用法是 pip install sentencepiece。
+_extra_libs = os.environ.get('LIVESUB_EXTRA_LIBS')
+if _extra_libs:
+    sys.path.insert(0, _extra_libs)
 import sentencepiece as sp
 from sentencepiece import sentencepiece_model_pb2 as pb
 
-ROOT = Path('D:/AI库/一次归档/LiveSubtitleAndroid')
+ROOT = Path(__file__).resolve().parents[1]
 MT = ROOT / 'app/src/main/assets/mt'
 SPM = {
     'en': Path('D:/androiddev/spm_probe/en_zh_source.spm'),

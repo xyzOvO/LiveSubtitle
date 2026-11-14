@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -24,8 +25,10 @@ TAB = chr(9)
 LF = chr(10)
 HF = 'https://huggingface.co/'
 GH = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/'
-sys.path.insert(0, 'D:/androiddev/mtprobe-libs')
-sys.path.insert(0, 'D:/androiddev/onnxprobe-libs')
+# 可选：额外依赖目录（离线调试用）；正式用法是 pip install sentencepiece。
+_extra_libs = os.environ.get('LIVESUB_EXTRA_LIBS')
+if _extra_libs:
+    sys.path.insert(0, _extra_libs)
 
 
 def get(url: str, dest: pathlib.Path, label: str) -> pathlib.Path:
