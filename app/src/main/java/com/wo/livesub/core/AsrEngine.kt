@@ -87,8 +87,12 @@ class AsrEngine private constructor(
         // 接缝去重：VAD 段两端自带 padding，硬切后下一段的开头会重新包含上一段尾部，
         // 识别出来就是「上一句的尾巴又说了一遍」。取上句末尾这么多字符做比对。
         private const val SEAM_TAIL_CHARS = 40
-        // 至少重叠这么多字符才认（英文≈2 个词，日文≈3 个假名），避免误删正常的重复口语。
-        private const val MIN_OVERLAP_CHARS = 8
+        // 至少重叠这么多字符才认，避免误删正常的重复口语。英文 8 ≈ 2 个词；
+        // 日语没有词间空格，8 个假名约等于 4~5 个词，VAD padding 带来的接缝重叠
+        // 根本够不到这么长，旧值对 ja 实际是死代码（真机 seam FIX 恒为 0）。
+        // 按语种分开后日语侧才真正启得动接缝去重，阈值仍明显高于刻意口语重复。
+        private const val MIN_OVERLAP_CHARS_EN = 8
+        private const val MIN_OVERLAP_CHARS_JA = 5
         // 去重后剩不下这么多字符，说明整段都是上一句的尾巴，直接丢弃。
         private const val MIN_KEEP_CHARS = 3
         private const val TAG = "LiveSubAsr"
@@ -193,6 +197,9 @@ class AsrEngine private constructor(
     // 只有上一段是被强制切开的（主动 flush）才置位——正常停顿断句两侧没有重叠。
     private var lastTail = ""
     private var dedupeNext = false
+    /** 接缝去重阈值按语种取：ja 假名密度高，8 字门槛几乎永远够不着。 */
+    private val minOverlapChars =
+        if (language == "ja") MIN_OVERLAP_CHARS_JA else MIN_OVERLAP_CHARS_EN
 
     @Volatile
     private var closed = false
@@ -370,7 +377,8 @@ class AsrEngine private constructor(
             }
             Log.i(
                 TAG,
-                "seam FIX chars=${rawText.length}->${seamText.length} raw=${rawText.take(40)}"
+                "seam FIX chars=${rawText.length}->${seamText.length} minK=$minOverlapChars " +
+                    "lang=$language raw=${rawText.take(40)}"
             )
         }
         val verdict = AsrQualityGate.check(seamText, segSec, language)
@@ -441,12 +449,12 @@ class AsrEngine private constructor(
      * 去掉 cur 开头与 prevTail 结尾重叠的部分。
      *
      * VAD 段两端自带 padding，强制切点两侧会包含同一小截音频，识别出来就是
-     * 「上一句的尾巴又说了一遍」。从长到短找最长重叠，至少 MIN_OVERLAP_CHARS
-     * 个字符才认，避免误删正常口语里刻意的重复。
+     * 「上一句的尾巴又说了一遍」。从长到短找最长重叠，至少 [minOverlapChars]
+     * 个字符才认（按语种取值），避免误删正常口语里刻意的重复。
      */
     private fun dropOverlap(prevTail: String, cur: String): String {
         val maxK = minOf(prevTail.length, cur.length, SEAM_TAIL_CHARS)
-        for (k in maxK downTo MIN_OVERLAP_CHARS) {
+        for (k in maxK downTo minOverlapChars) {
             if (prevTail.regionMatches(prevTail.length - k, cur, 0, k, ignoreCase = true)) {
                 return cur.substring(k).trimStart()
             }

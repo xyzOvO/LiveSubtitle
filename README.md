@@ -59,10 +59,10 @@
 
 ## 📲 下载
 
-> **系统要求**：Android 10（API 29）及以上，**arm64-v8a**，安装包约 **707 MB**（模型 648 MB 全在包里）。首次安装需在系统里允许「安装未知来源应用」。
+> **系统要求**：Android 10（API 29）及以上，**arm64-v8a**，安装包约 **768 MB**（模型 709 MB 全在包里）。首次安装需在系统里允许「安装未知来源应用」。
 
 - **[Releases](https://github.com/xyzOvO/LiveSubtitle/releases/latest)** 下载最新 APK（debug 签名，可直接安装）
-- 也可以自行构建（见 [🛠 构建](#build)），但需要先下载 648 MB 模型，耗时主要在网络上
+- 也可以自行构建（见 [🛠 构建](#build)），但需要先下载 709 MB 模型，耗时主要在网络上
 
 > 装好之后，**主界面最底部常驻一行 `github.com/xyzOvO/LiveSubtitle · 查看新版本`**，点一下直接跳系统浏览器。
 > 想确认自己装的是不是最新版，从这一行过去看一眼就行，不必记住版本号。
@@ -117,7 +117,7 @@
 |---|---|
 | **文字翻译** | 主界面输入框（上限 500 字），用同一套本地模型翻译，语向沿用上方选择；可复制译文 |
 | **译名对照** | 每行一组「标准译名=别名1\|别名2」，译文里出现别名就统一成标准译名。小模型逐句独立翻译，同一部片里 Elena 才不会一会儿「艾琳娜」一会儿「埃琳娜」。运行中改表，下一句就生效 |
-| **快速模式** | 单句上限从 12 秒压到 **4 秒**，字幕更快但可能断在词间；默认关，开关在「双语显示」下面 |
+| **快速模式** | 单句上限从 12 秒压到 **4 秒**，字幕更快但可能断在词间；默认关，开关在「双语显示」下面，日语 / 英语各记一次 |
 | **状态如实** | 服务没跑、权限没给、抓不到声音、模型加载失败、队列过载保留原文，主界面状态卡都直接说，不写「一切正常」 |
 
 ---
@@ -171,10 +171,10 @@
 | 源语音 → 输出 | ASR | 翻译 | assets 目录 | 体积 |
 |---|---|---|---|---|
 | 英语 → 中文 | `sherpa-onnx-whisper-tiny.en`（int8） | `Xenova/opus-mt-en-zh` 量化版 + `>>cmn_Hans<<` 前缀 + KV cache | `asr/sherpa-onnx-whisper-tiny.en`、`mt/en` | 99 M + 168 M |
-| 日语 → 中文 | `sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01`（int8） | `ruozhi521/shiyin-mt-ja-zh-onnx`（导出无 present，逐前缀解码） | `asr/sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01`、`mt/ja` | 162 M + 220 M |
+| 日语 → 中文 | `sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01`（int8） | `ruozhi521/shiyin-mt-ja-zh-onnx` 的 v4 微调权重 + 反推重导的成对图（KV cache） | `asr/sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01`、`mt/ja` | 162 M + 281 M |
 | 语音活动检测 | `silero_vad.onnx` | — | `asr/silero_vad.onnx` | 632 K |
 
-每套 MT 资产含 `encoder_model.onnx`、`decoder_model.onnx`、`source_vocab.tsv`、`target_vocab.tsv`、`config.tsv`、`spm.tsv`；`mt/en` 另有 `decoder_with_past_model_quantized.onnx`。`spm.tsv` 六列：`piece<TAB>score<TAB>type<TAB>unk_penalty<TAB>model_type<TAB>unk_id`。
+每套 MT 资产含 `encoder_model.onnx`、`decoder_model.onnx`、`source_vocab.tsv`、`target_vocab.tsv`、`config.tsv`、`spm.tsv`；`mt/en` 与 `mt/ja` 都另有 `decoder_with_past_model_quantized.onnx`（首步图产 `present.*`，后续步用 KV cache 续写）。`spm.tsv` 六列：`piece<TAB>score<TAB>type<TAB>unk_penalty<TAB>model_type<TAB>unk_id`。
 
 分词不是「字符最长匹配」这种近似做法：`spm.tsv` 由官方 `source.spm` 导出，纯 Kotlin 按 `model_type` 跑 unigram Viterbi 或 BPE greedy，得到 piece 后再查 `source_vocab.tsv` 换成 id。
 
@@ -192,7 +192,7 @@
 
 ### 📦 先把两样东西补上
 
-仓库里**没有**模型权重与 sherpa-onnx 的 AAR（`.gitignore` 已排除，合计约 680 MB），克隆后先跑这两步，需要联网：
+仓库里**没有**模型权重与 sherpa-onnx 的 AAR（`.gitignore` 已排除，合计约 742 MB），克隆后先跑这两步，需要联网：
 
 ```bash
 python tools/install_sherpa_aar.py   # 下载 sherpa-onnx 1.12.33 AAR，校验 SHA-256 后放进 local-maven/
@@ -207,7 +207,7 @@ python tools/get_models.py           # 下载并转换 ASR / MT / VAD 资产到 
 ./gradlew :app:assembleDebug      # macOS / Linux
 gradlew.bat :app:assembleDebug    # Windows
 gradle :app:assembleDebug         # 已装 Gradle 8.9 时可直接用
-# 产物：app/build/outputs/apk/debug/app-debug.apk（约 707 MB）
+# 产物：app/build/outputs/apk/debug/app-debug.apk（约 768 MB）
 ```
 
 > 增量打包**不会截断**旧 APK：删掉 assets 后直接 `assembleDebug`，文件大小仍然是旧的（zip 条目却变小了）。改过模型资产后请用 `clean assembleDebug`，或先把旧 APK 移走。
@@ -254,8 +254,8 @@ Releases 里目前挂的是 **debug 签名**的 APK。换正式签名包必须�
 **Q：能不能加别的语言，比如韩语、法语？**
 可以，但需要三样东西：对应语言的 ASR 模型、`xx→zh` 的 MT 模型、以及在 `ModelAssets.routeDir` 里加一条路由并在界面加一个选项。目前包里只有英语和日语，是因为只验证过这两条链路的质量。
 
-**Q：为什么要 707 MB？**
-模型占 648 MB，其中英日两套 ASR 261 MB、两套 MT 388 MB。已经砍掉了英日互译（省 291 MB）；再往下压只能量化更狠或换更小的模型，会直接掉质量。这是离线方案的代价——省掉的正是「联网调 API」。
+**Q：为什么要 768 MB？**
+模型占 709 MB，其中英日两套 ASR 261 MB、两套 MT 449 MB（ja 281 + en 168）。已经砍掉了英日互译（省 291 MB）；MT 的 int8 量化也让 ja 比 1.0.2 多了 62 MB，换来真机约 6.8x 的解码加速。再往下压只能量化更狠或换更小的模型，会直接掉质量。这是离线方案的代价——省掉的正是「联网调 API」。
 
 **Q：会上传我的声音或字幕吗？**
 不会，也无法。清单里没有 `INTERNET` 权限（`onnxruntime-android` AAR 合并进来的那两个权限用 `tools:node="remove"` 移除了），进程级也没有任何 socket 调用。`allowBackup=false`，连系统备份都不进。
@@ -309,7 +309,7 @@ ASR worker 线程（单线程串行）
    ▼
 AsrQualityGate（7 条规则）── 判定为幻听就整句丢弃，不上屏
    ▼
-NeuralTranslator（Marian ONNX，en→zh 走 KV cache，ja→zh 逐前缀）
+NeuralTranslator（Marian ONNX，en→zh / ja→zh 均走 KV cache；入口先过整串词表）
    ├─ 草稿路线：1.2 秒节流 + 文本没变跳过 + 定稿排队即中止
    └─ 定稿路线：整句翻译，失败保留原文
    ▼
@@ -342,6 +342,7 @@ app/src/main/java/com/wo/livesub/
 │   ├── AsrEngine.kt             ★ worker 线程 / VAD 分段 / 草稿 / 定稿 / 环形缓冲 / 接缝去重
 │   ├── AsrQualityGate.kt        7 条文本规则拦幻听与复读
 │   ├── NeuralTranslator.kt      ★ Marian ONNX 推理：KV cache、逐前缀 fallback、线程配置
+│   ├── ShortGlossary.kt         ja / en 整串词表：单词与固定短语不进模型
 │   ├── Translator.kt            翻译接口（含 IdentityTranslator 透传）
 │   ├── SentencePieceTokenizer.kt unigram Viterbi / BPE greedy 分词
 │   ├── TermGlossary.kt          译名对照表解析与替换

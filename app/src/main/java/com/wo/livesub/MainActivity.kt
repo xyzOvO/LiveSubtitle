@@ -12,10 +12,12 @@ import android.os.Bundle
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import com.wo.livesub.core.DisplayMode
 import com.wo.livesub.core.IdentityTranslator
 import com.wo.livesub.core.NeuralTranslator
+import com.wo.livesub.core.ShortGlossary
 import com.wo.livesub.core.SrtExporter
 import com.wo.livesub.core.SubtitleLine
 import com.wo.livesub.core.SubtitleState
@@ -65,8 +68,11 @@ class MainActivity : AppCompatActivity() {
     private var textTranslatorKey = ""
     private var lastTextResult = ""
 
-    // 只有「快速模式」需要跨启动保留：它影响切句策略，用户调一次就该记住。
+    // 只有「快速模式」需要跨启动保留：它影响切句策略，用户调一次就该记住；
+    // 1.0.6 起按源语种分开记，日语 / 英语互不影响。
     private val appPrefs by lazy { getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE) }
+    // 程序化同步复选框时屏蔽写盘监听，避免切换语种把值写串。
+    private var syncingFastCut = false
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
@@ -123,12 +129,18 @@ class MainActivity : AppCompatActivity() {
         chkBilingual = findViewById(R.id.chk_bilingual)
         chkFastCut = findViewById(R.id.chk_fast_cut)
         // 先恢复状态再挂监听，避免初始化时误触发一次写盘和 Toast。
-        chkFastCut.isChecked = appPrefs.getBoolean(KEY_FAST_CUT, false)
+        migrateFastCutPrefs()
+        chkFastCut.isChecked = appPrefs.getBoolean(fastCutKey(selectedSourceLang()), false)
         chkFastCut.setOnCheckedChangeListener { _, checked ->
-            appPrefs.edit().putBoolean(KEY_FAST_CUT, checked).apply()
+            if (syncingFastCut) return@setOnCheckedChangeListener
+            appPrefs.edit().putBoolean(fastCutKey(selectedSourceLang()), checked).apply()
             if (SubtitleState.running.value) {
                 Toast.makeText(this, getString(R.string.fast_cut_need_restart), Toast.LENGTH_SHORT).show()
             }
+        }
+        // 切换源语种时把复选框切到该语种自己的设置；运行中语言按钮是禁用的，不会中途串值。
+        findViewById<RadioGroup>(R.id.lang_group).setOnCheckedChangeListener { _, _ ->
+            syncFastCutForLang()
         }
         etTextInput = findViewById(R.id.et_text_input)
         btnTextTranslate = findViewById(R.id.btn_text_translate)
@@ -138,6 +150,30 @@ class MainActivity : AppCompatActivity() {
         etGlossary = findViewById(R.id.et_glossary)
         tvGlossaryStatus = findViewById(R.id.tv_glossary_status)
         setupGlossary()
+    }
+
+    /** 快速模式按源语种分开存：ja / en 各记一次，互不串味。 */
+    private fun fastCutKey(lang: String): String =
+        if (lang == "ja") KEY_FAST_CUT_JA else KEY_FAST_CUT_EN
+
+    /**
+     * 旧版（≤1.0.5）只有一个全局 fast_cut。升级后把它的值铺成两个语种的初值，
+     * 用户原来的设置不会丢；只跑一次，之后两个新 key 各自独立演化。
+     */
+    private fun migrateFastCutPrefs() {
+        if (appPrefs.contains(KEY_FAST_CUT_JA) || appPrefs.contains(KEY_FAST_CUT_EN)) return
+        val legacy = appPrefs.getBoolean(KEY_FAST_CUT_LEGACY, false)
+        appPrefs.edit()
+            .putBoolean(KEY_FAST_CUT_JA, legacy)
+            .putBoolean(KEY_FAST_CUT_EN, legacy)
+            .apply()
+    }
+
+    /** 切换源语种时把复选框切到该语种自己的值；程序化赋值期间不写盘。 */
+    private fun syncFastCutForLang() {
+        syncingFastCut = true
+        chkFastCut.isChecked = appPrefs.getBoolean(fastCutKey(selectedSourceLang()), false)
+        syncingFastCut = false
     }
 
     private fun wireButtons() {
@@ -249,15 +285,24 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             // 必须用命名参数：尾随 lambda 会被解析成 onPartial（此前编译踩过这个坑）。
             val outcome: Pair<String, Boolean> = try {
-                val translator = ensureTextTranslator(src, tgt)
-                if (translator == null) {
-                    errModel to false
+                // 整串命中词表时不需要 ONNX 会话：先短路，别为查一个单词加载整套模型。
+                // 译文仍过一遍术语表，保证与语音字幕、模型路线三者的译名口径一致。
+                val glossed = ShortGlossary.lookup(input, src)
+                if (glossed != null) {
+                    Log.i("LiveSubPerf", "glossary fast path chars=${input.length} lang=$src")
+                    val fixed = TermGlossary.apply(glossed, TermGlossary.load(this@MainActivity))
+                    (if (src == tgt) fixed + "\n\n" + identityHint else fixed) to true
                 } else {
-                    val result = translator.translate(input, isStale = { false }).ifBlank { input }
-                    // 和语音字幕用同一张术语表，保证两条路径的译名一致。
-                    val fixed = TermGlossary.apply(result, TermGlossary.load(this@MainActivity))
-                    val decorated = if (src == tgt) fixed + "\n\n" + identityHint else fixed
-                    decorated to true
+                    val translator = ensureTextTranslator(src, tgt)
+                    if (translator == null) {
+                        errModel to false
+                    } else {
+                        val result = translator.translate(input, isStale = { false }).ifBlank { input }
+                        // 和语音字幕用同一张术语表，保证两条路径的译名一致。
+                        val fixed = TermGlossary.apply(result, TermGlossary.load(this@MainActivity))
+                        val decorated = if (src == tgt) fixed + "\n\n" + identityHint else fixed
+                        decorated to true
+                    }
                 }
             } catch (_: Throwable) {
                 errFailed to false
@@ -398,6 +443,9 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val PREF_NAME = "app_settings"
-        const val KEY_FAST_CUT = "fast_cut"
+        // 1.0.6 起按源语种分别记忆；旧 key 只用于一次性迁移，不再写入。
+        const val KEY_FAST_CUT_JA = "fast_cut_ja"
+        const val KEY_FAST_CUT_EN = "fast_cut_en"
+        const val KEY_FAST_CUT_LEGACY = "fast_cut"
     }
 }

@@ -13,6 +13,10 @@ import java.nio.LongBuffer
 /**
  * 纯本地 Marian ONNX 翻译器。
  *
+ * 入口先过 [ShortGlossary]：单词 / 固定短语整串命中时直接返回译文，不进模型。
+ * 原因是 v4 微调语料全是完整句子，没有「孤立单词」形态，单词输入会让 decoder
+ * 退化成一两个高频寒暄词（にほんご → 诶......?）；整句翻译不受影响。
+ *
  * 分词：SentencePieceTokenizer 输出 piece 字符串，再用 HF 合并 vocab.json 查 id。
  * 解码：en / en→ja / ja→en 走首步 decoder 生成 present.*，后续用
  * decoder_with_past_model_quantized.onnx 驱动 past_key_values.* 的 KV cache；
@@ -20,7 +24,7 @@ import java.nio.LongBuffer
  *
  * 速度：首步产出的 12 个 cross-attn KV（*.encoder.*）与 encoder mask 在整句内不变，
  * 建成常驻 OnnxTensor 复用；只在末尾做一次 decodeTarget；argmax 批量读取 logits；
- * 目标长度按源长收敛，连续重复 2/3-gram 直接收尾。
+ * 目标长度按源长收敛，连续重复 2/3-gram 时裁掉重复尾巴再收尾。
  * A4：解码过程中通过 onPartial 回调已生成的译文前缀，供浮层首字即显。
  *
  * 所有失败早退都释放 native session / options；OrtEnvironment 是进程级单例，不在此释放。
@@ -85,6 +89,14 @@ class NeuralTranslator private constructor(
         runLock.lock()
         try {
             if (closed) throw IllegalStateException("translator closed")
+            // 单词级输入模型必崩（にほんご → 诶......?，实测首 token 的 top1/top2 差 < 0.5），
+            // 整串命中词表时直接给确定译文。未命中原样往下走，行为与接入前完全一致。
+            val glossed = ShortGlossary.lookup(source, sourceLangLabel)
+            if (glossed != null) {
+                if (isStale()) throw StaleTranslationException()
+                Log.i(PERF_TAG, "glossary hit chars=${source.length} label=$label")
+                return glossed
+            }
             val key = if (cacheable) source.trim() else ""
             if (key.isNotEmpty()) {
                 memo[key]?.let { hit ->
@@ -95,7 +107,10 @@ class NeuralTranslator private constructor(
                 }
             }
             val out = translateLocked(source, isStale, onPartial)
-            if (key.isNotEmpty() && out.isNotBlank() && out != source) memo[key] = out
+            // 私用区过滤后可能整句变空（en 目标词表 506/65001 条是 PUA token）。
+            // 空译文上屏就是一条空白字幕，退回原文至少还能看。
+            if (out.isBlank()) return source
+            if (key.isNotEmpty() && out != source) memo[key] = out
             return out
         } finally {
             runLock.unlock()
@@ -274,7 +289,7 @@ class NeuralTranslator private constructor(
                 appendRaw(raw, nextId)
                 steps = step + 1
                 emitPartial(onPartial, raw, step)
-                if (repeatedTail(generated)) {
+                if (trimRepeatedTail(generated) > 0) {
                     stopReason = "repeat"
                     break
                 }
@@ -342,7 +357,7 @@ class NeuralTranslator private constructor(
             appendRaw(raw, nextId)
             steps = step + 1
             emitPartial(onPartial, raw, step)
-            if (repeatedTail(generated)) {
+            if (trimRepeatedTail(generated) > 0) {
                 stopReason = "repeat"
                 break
             }
@@ -362,7 +377,20 @@ class NeuralTranslator private constructor(
         if (idx !in targetTokens.indices) return
         val token = targetTokens[idx]
         if (token == "<pad>" || token == "</s>" || token == "<s>" || token == "<unk>") return
-        raw.append(token)
+        appendClean(raw, token)
+    }
+
+    /**
+     * opus-mt-en-zh 的目标词表 65001 条里有 506 条含私用区字符（U+E000–U+F8FF），
+     * 日语词表是 0 条——所以只有 en 会撞上。撞上时屏幕上就是豆腐块 / 乱码
+     * （实测 hello → U+E05F 霉）。这里逐字符过滤，混在正常 token 里的也一并丢掉。
+     */
+    private fun appendClean(sb: StringBuilder, token: String) {
+        for (c in token) {
+            val code = c.code
+            if (code in 0xE000..0xF8FF || code == 0xFFFD) continue
+            sb.append(c)
+        }
     }
 
     /** 每 2 步或遇标点刷一次，避免单字刷新；最终译文仍以 decodeTarget 为准。 */
@@ -382,15 +410,49 @@ class NeuralTranslator private constructor(
         }
     }
 
-    /** 连续重复 2/3-gram 视为解码死循环，直接收尾，不再白跑剩余步数。 */
-    private fun repeatedTail(ids: List<Long>): Boolean {
-        val n = ids.size
-        if (n < 6) return false
-        for (k in 2..3) {
-            if (n < k * 2) continue
-            if (ids.subList(n - k, n) == ids.subList(n - 2 * k, n - k)) return true
+    /**
+     * 解码死循环收尾：裁掉尾部重复的 token、只保留第一份，返回裁掉的个数（0 = 无重复）。
+     *
+     * 旧实现只 break 不裁剪，而重复的那几个 token 已经 append 进 generated，
+     * 于是残渣照样上屏——en 上可稳定复现「water → 水 水 水」「good morning → 早,早,早」。
+     *
+     * 两类模式：
+     *  - 单个 token 连续 3 次以上（「水 水 水 水」）→ 保留 1 个；
+     *  - 2/3-gram 连续重复 2 组以上（「早,早,早,」）→ 保留 1 组。
+     *
+     * 裁剪下限是 1：generated[0] 恒为 bos，不能连它一起删，否则整句译文会变空。
+     */
+    private fun trimRepeatedTail(ids: MutableList<Long>): Int {
+        val before = ids.size
+        if (ids.size >= 4) {
+            val last = ids[ids.size - 1]
+            var run = 1
+            while (run < ids.size && ids[ids.size - 1 - run] == last) run++
+            if (run >= 3) {
+                val removeFrom = (ids.size - run + 1).coerceAtLeast(1)
+                if (removeFrom < ids.size) ids.subList(removeFrom, ids.size).clear()
+                return before - ids.size
+            }
         }
-        return false
+        for (k in 3 downTo 2) {
+            val n = ids.size
+            if (n < k * 2) continue
+            var reps = 1
+            while (true) {
+                val end = n - reps * k
+                val prev = end - k
+                if (prev < 0) break
+                if (ids.subList(end, end + k) == ids.subList(prev, prev + k)) reps++ else break
+            }
+            if (reps >= 2) {
+                val removeFrom = (n - reps * k + k).coerceAtLeast(1)
+                if (removeFrom < n) {
+                    ids.subList(removeFrom, n).clear()
+                    return before - ids.size
+                }
+            }
+        }
+        return 0
     }
 
     private fun encodeSource(text: String): LongArray {
@@ -412,7 +474,7 @@ class NeuralTranslator private constructor(
             if (idx in targetTokens.indices) {
                 val token = targetTokens[idx]
                 if (token == "<pad>" || token == "</s>" || token == "<s>" || token == "<unk>") continue
-                sb.append(token)
+                appendClean(sb, token)
             }
         }
         return sb.toString()
@@ -590,7 +652,8 @@ class NeuralTranslator private constructor(
                 optionsRef = options
                 options.setIntraOpNumThreads(MT_THREADS)
                 // 单句 batch=1 的逐 token 解码：顺序执行 + 不做 inter-op 并行，
-                // 避免与 ASR 线程抢核；线程数与 EP 组合仍需真机 A/B。
+                // 避免与 ASR 线程抢核。真机 A/B（ja/en 各 4 句，译文逐字一致）：
+                // 4 线程 decMs 平均比 2 线程慢约 3.6%（ja 前三句 +5~14ms），故固定 2。
                 options.setInterOpNumThreads(1)
                 options.setExecutionMode(OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL)
                 options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)

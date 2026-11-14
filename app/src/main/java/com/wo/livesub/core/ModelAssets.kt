@@ -16,7 +16,8 @@ import java.io.IOException
  *   v3 起只保留「外语 → 中文」两条路线：原 mt/en_ja（英→日）、mt/ja_en（日→英）
  *   已随 assets 一起裁掉，省 291MB——产品定位是给直播 / 影视配中文字幕，
  *   英日互译没有使用场景，留着只是白占安装包。
- *   每套都有 spm.tsv；en 另有 decoder_with_past_model_quantized.onnx（ja 模型无 present 输出）。
+ *   每套都有 spm.tsv 与 decoder_with_past_model_quantized.onnx：ja 的成对 KV cache 图
+ *   由 v4 ONNX 反推权重后重导，1.0.3 起 en / ja 两条路线都走 KV cache，旧注释已失效。
  *   源语 == 目标语时由 IdentityTranslator 透传，不加载 MT 权重。
  */
 object ModelAssets {
