@@ -436,7 +436,8 @@ class NeuralTranslator private constructor(
         }
         for (k in 3 downTo 2) {
             val n = ids.size
-            if (n < k * 2) continue
+            // 见 MIN_REPEAT_PREFIX_TOKENS：短译文不进 n-gram 裁剪，只保留单 token 死循环保护。
+            if (n < k * 2 + MIN_REPEAT_PREFIX_TOKENS) continue
             var reps = 1
             while (true) {
                 val end = n - reps * k
@@ -593,6 +594,13 @@ class NeuralTranslator private constructor(
          */
         private const val MT_MEMO_SIZE = 64
         private const val UNK_ID = 1L
+        /**
+         * 2/3-gram 复读裁剪前，尾部之外至少要留这么多 token。
+         * 旧逻辑只要 n >= k*2 就动手，极短译文里「看看」「慢慢」这类正常叠词
+         * 会被误判成 2-gram 复读，把整句砍成半句（真机 stop=repeat 的来源之一）。
+         * 要求留够前缀后，死循环保护仍对长句生效，短译文不再被误裁。
+         */
+        private const val MIN_REPEAT_PREFIX_TOKENS = 4
         private const val PERF_TAG = "LiveSubPerf"
         private val SPACE_BEFORE_PUNCT = Regex("\\s+([，。！？、；：,.!?;:])")
         private val SPACE_AFTER_PUNCT = Regex("([，。！？、；：])\\s+")

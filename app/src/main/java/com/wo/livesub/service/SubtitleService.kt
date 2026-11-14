@@ -29,6 +29,7 @@ import com.wo.livesub.core.IdentityTranslator
 import com.wo.livesub.core.ModelAssets
 import com.wo.livesub.core.NeuralTranslator
 import com.wo.livesub.core.OverlayController
+import com.wo.livesub.core.SegmentMerger
 import com.wo.livesub.core.StaleTranslationException
 import com.wo.livesub.core.SubtitleLine
 import com.wo.livesub.core.SubtitleState
@@ -47,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -118,6 +120,9 @@ class SubtitleService : Service(), AsrListener {
     private var projection: MediaProjection? = null
     private var audio: AudioCapture? = null
     private var asr: AsrEngine? = null
+    // 短段合并：把 VAD 切碎的半句攒成一句再翻译；定时 flush 由本服务的协程驱动。
+    private var merger: SegmentMerger? = null
+    private var mergerFlushJob: Job? = null
     private var translator: Translator? = null
     private var overlay: OverlayController? = null
     private var modeLabel: String = ""
@@ -237,6 +242,12 @@ class SubtitleService : Service(), AsrListener {
         SubtitleState.setStatus(baseStatus())
         failureStatus = null
         pipelineStarted = true
+        merger = SegmentMerger(
+            lang = sourceLang,
+            emit = ::enqueueMerged,
+            scheduleFlush = ::scheduleMergerFlush,
+            log = { msg -> Log.i("LiveSubAsr", msg) }
+        )
         // 术语表：运行中改配置也要下一句就生效，所以注册监听而不是启动时读一次。
         glossary = TermGlossary.load(this)
         glossaryListener?.let { TermGlossary.unregisterListener(this, it) }
@@ -583,12 +594,32 @@ class SubtitleService : Service(), AsrListener {
     }
 
     override fun onFinal(text: String, startMs: Long, endMs: Long, speechStartWallMs: Long) {
+        val p = SegmentMerger.Pending(
+            source = text,
+            startMs = startMs,
+            endMs = endMs,
+            speechStartWallMs = speechStartWallMs,
+            finalAtMs = SystemClock.elapsedRealtime()
+        )
+        // hold 期间刻意不清草稿：ASR 继续刷新草稿，浮层不会空出一截；
+        // 真正落地时由 enqueueMerged 统一清，用户感知不到这段等待窗口。
+        val m = merger
+        if (m != null) m.onFinal(p) else enqueueMerged(p)
+    }
+
+    /**
+     * 合并器吐出的一句：清草稿、分配版本、入翻译队列。
+     * version 只在真正落地时递增，被合并掉的定稿不会让草稿 stale 判定空跳一拍。
+     * finalAtMs 保留首段时刻，sentenceMs 会如实把 hold 等待计入，便于真机量化代价。
+     */
+    private fun enqueueMerged(p: SegmentMerger.Pending) {
         SubtitleState.setDraft("")
         SubtitleState.setPartialTranslation("")
         val version = latestRequested.incrementAndGet()
         val segment = PendingSegment(
-            version, text, startMs, endMs,
-            speechStartWallMs = speechStartWallMs
+            version, p.source, p.startMs, p.endMs,
+            finalAtMs = p.finalAtMs,
+            speechStartWallMs = p.speechStartWallMs
         )
         val result = pending.trySend(segment)
         if (!result.isSuccess) {
@@ -598,8 +629,21 @@ class SubtitleService : Service(), AsrListener {
         }
     }
 
+    private fun scheduleMergerFlush(delayMs: Long, seq: Long) {
+        mergerFlushJob?.cancel()
+        mergerFlushJob = serviceScope.launch {
+            delay(delayMs)
+            merger?.flush(seq = seq)
+        }
+    }
+
     override fun onDestroy() {
         pipelineStarted = false
+        // 停止前把暂缓的半句吐出来，绝不因为服务退出丢句子。
+        mergerFlushJob?.cancel()
+        mergerFlushJob = null
+        try { merger?.flush("STOP") } catch (_: Throwable) {}
+        merger = null
         glossaryListener?.let { TermGlossary.unregisterListener(this, it) }
         glossaryListener = null
         serviceScope.cancel()

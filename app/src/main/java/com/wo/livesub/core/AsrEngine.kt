@@ -84,6 +84,12 @@ class AsrEngine private constructor(
         // 短停顿判定用能量而不是 vad.isSpeechDetected()：Silero 在 minSilenceDuration
         // 窗口内会一直保持「检测到语音」，拿不到 160ms 级别的换气停顿（实测 fastCut 从不触发）。
         private const val QUIET_RMS = 0.012f
+        // VAD 断句门槛按语种分开：日语无词间空格、句内换气比英语长，0.4s 在真机日语
+        // 闲聊 / BGM 下仍会把一句切成「うん」「ああ」这类 2–7 字碎片（15:20 实测：
+        // 7 条定稿 chars 中位 4、段长 1.1–3.8s，MT 从未截断）。英语有词间停顿，
+        // 且快速模式另有 2.5s+160ms 短静音切句，抬太高只会拖慢定稿。
+        private const val MIN_SILENCE_DURATION_JA = 0.75f
+        private const val MIN_SILENCE_DURATION_EN = 0.6f
         // 接缝去重：VAD 段两端自带 padding，硬切后下一段的开头会重新包含上一段尾部，
         // 识别出来就是「上一句的尾巴又说了一遍」。取上句末尾这么多字符做比对。
         private const val SEAM_TAIL_CHARS = 40
@@ -112,6 +118,9 @@ class AsrEngine private constructor(
         ): AsrEngine? {
             val language = ModelAssets.normalizeLang(lang)
             if (!ModelAssets.asrPresent(context, language)) return null
+            val minSilence = if (language == "ja") MIN_SILENCE_DURATION_JA else MIN_SILENCE_DURATION_EN
+            // 参数落盘日志：真机回看时能直接确认这一路用的是哪档门槛。
+            Log.i(TAG, "vad config lang=$language minSilence=${minSilence}s maxSpeech=20s fastCut=$fastCut")
             var recognizer: OfflineRecognizer? = null
             var vad: Vad? = null
             try {
@@ -154,10 +163,9 @@ class AsrEngine private constructor(
                     sileroVadModelConfig = SileroVadModelConfig(
                         model = ModelAssets.ASR_VAD,
                         threshold = 0.5f,
-                        // 0.1s 会把一句连续对白按词语间的自然停顿切碎（实测 src 只剩 2–7 token，
-                        // 译文全是「え」「何」「大家」这类碎片）。0.4s 覆盖句内停顿，
-                        // 20s 与 MAX_BUFFER_SAMPLES 对齐，避免直播 / 影视长句被硬切。
-                        minSilenceDuration = 0.4f,
+                        // 0.1s 会把连续对白按词间停顿切碎；0.4s 仍不足以覆盖日语句内换气
+                        // （15:20 真机：定稿 chars 中位 4）。改按语种取，见上方常量。
+                        minSilenceDuration = minSilence,
                         minSpeechDuration = 0.3f,
                         windowSize = VAD_WINDOW,
                         maxSpeechDuration = 20f
