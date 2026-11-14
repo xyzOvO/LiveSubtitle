@@ -483,6 +483,7 @@ class NeuralTranslator private constructor(
             .trim()
             .replace(SPACE_BEFORE_PUNCT, "$1")
             .replace(SPACE_AFTER_PUNCT, "$1")
+            .replace(BRACKET_EMPHASIS, "$1")
     }
 
     private fun argmax(logits: OnnxTensor): Long? {
@@ -604,6 +605,15 @@ class NeuralTranslator private constructor(
         private const val PERF_TAG = "LiveSubPerf"
         private val SPACE_BEFORE_PUNCT = Regex("\\s+([，。！？、；：,.!?;:])")
         private val SPACE_AFTER_PUNCT = Regex("([，。！？、；：])\\s+")
+        /**
+         * ja→zh v4 微调语料把强调词写成「【谢谢】」「【说】」。
+         * 用 PC 同款 ONNX 路径跑 129 条真机定稿原文，译文里出现 3 处：
+         *   「那我就在这里和你说【谢谢】吧」「话说【说】的话,」「想跟你说【谢谢】的」
+         * 括号不是语义，去掉后内容一字不改，也不影响英文链路（en 词表无此写法）。
+         * 只放在 decodeTarget 的最终译文上：草稿是增量前缀，括号会随刷新自然消失，
+         * 没必要为了它每 2 步多跑一次正则。
+         */
+        private val BRACKET_EMPHASIS = Regex("【([^】]{1,12})】")
 
         private fun pick(names: Set<String>, vararg candidates: String): String? =
             candidates.firstOrNull { names.contains(it) }

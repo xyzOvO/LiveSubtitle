@@ -3,12 +3,13 @@
 
 1. AsrEngine.dropOverlap 的接缝去重阈值按语种取（ja / en 各一套）。
    用构造的接缝样例回放，确认「真重叠删得掉、正常口语重复不会被误删」。
-2. ShortGlossary 新增的整句兜底词条，归一化后确实能命中，
-   且长度都在 MAX_CHARS 之内；表外长句仍一律放行给模型。
+2. ShortGlossary 的整句兜底词条与 1.0.9 离线评测补录词条，归一化后确实能命中，
+   长度都在 MAX_CHARS 之内、无重复 key；表外长句仍一律放行给模型。
 3. VAD 断句门槛按语种取值，且确实高于旧的 0.4s、确实接进 VadModelConfig。
 4. SegmentMerger 的短段合并判据：用 1.0.6 / 1.0.7 真机里真实出现过的相邻段回放，
    确认「句内半句并得上、独立应答词不误并、超时窗口覆盖整个可合并区间」。
 5. NeuralTranslator 的 2/3-gram 复读裁剪留够前缀，短译文不会被误裁成半句。
+6. ja→zh v4 微调语料引入的【…】强调括号，在最终译文里被剥掉且内容不变。
 
 所有常量都从 Kotlin 源码正则读取，脚本与代码漂移会直接 FAIL。
 """
@@ -155,8 +156,28 @@ NEW_ENTRIES = {
     "っぽいんですけど": "好像是……不过",
     "ああ": "啊",
 }
-for key, want in NEW_ENTRIES.items():
-    check(entries.get(key) == want, "新增词条 " + key, repr(entries.get(key)))
+
+# 1.0.9：依据 129 条真机定稿原文 + PC 同款 ONNX 离线评测补录。
+# (a) 模型明显译错；(b) 高频固定短语（短路提速 + 去掉模型习惯性省略号）；
+# (c) 同族形变防御。三条都只认整串，表外长句行为不变。
+ENTRIES_109 = {
+    "っぽいんですか": "像是……吗？",
+    "って": "说是……",
+    "フフ": "呵呵",
+    "長い": "长",
+    "分かん": "不知道",
+    "意味ありますね": "有意义呢",
+    "だから": "所以",
+    "それでも": "即便如此",
+    "みたいな": "之类的",
+    "さあ": "来吧",
+    "まあ": "嘛",
+    "よろしければ": "如果可以的话",
+    "ありがとうございました": "谢谢您",
+    "フフフ": "呵呵呵",
+}
+for key, want in {**NEW_ENTRIES, **ENTRIES_109}.items():
+    check(entries.get(key) == want, "词条 " + key, repr(entries.get(key)))
 
 print("glossary: ja_entries=%d MAX_CHARS=%d HARD_LIMIT=%d" % (len(entries), MAX_CHARS, HARD_LIMIT))
 for raw, want_key in [
@@ -168,6 +189,11 @@ for raw, want_key in [
     ("二千万あるといいな！", "二千万あるといいな"),
     ("耳かきが、", "耳かきが"),
     ("ああ……", "ああ"),
+    ("だから……", "だから"),
+    ("長い！", "長い"),
+    ("ありがとうございました。", "ありがとうございました"),
+    ("よろしければ", "よろしければ"),
+    ("フフフ", "フフフ"),
 ]:
     hit = normalize_ja(raw)
     check(hit == want_key, "归一化命中 " + raw, repr(hit))
@@ -178,6 +204,19 @@ for raw in [
 ]:
     hit = normalize_ja(raw)
     check(hit is None or hit not in entries, "表外/长句仍放行 " + raw, "normalize=" + repr(hit))
+
+check(all(normalize_ja(k) == k and k in entries for k in ENTRIES_109),
+      "1.0.9 补录 14 条整串归一化自洽")
+# 1.0.6 / 1.0.7 真机 logcat 里实际出现、补录前必须走 ONNX 的 12 条定稿原文。
+# 全量 129 条去重原文的短路率由 19/129 (15%) 升到 31/129 (24%)，
+# 这里内嵌命中子集，避免脚本依赖仓库外的临时日志。
+CORPUS_109 = [
+    "っぽいんですか", "フフ", "みたいな", "だから", "それでも", "長い",
+    "さあ", "意味ありますね", "って", "分かん", "ありがとうございました",
+    "よろしければ",
+]
+check(all(normalize_ja(t) in entries for t in CORPUS_109),
+      "12 条真机误译/高频原句现在全部短路（补录前需跑 ONNX）")
 
 # ── 规则 3：VAD 断句门槛 ──────────────────────────────────────────────
 JA_SIL = const_float(asr, "MIN_SILENCE_DURATION_JA")
@@ -281,11 +320,27 @@ check(re.search(r"n < k \* 2 \+ MIN_REPEAT_PREFIX_TOKENS", mt) is not None,
       "n-gram 分支确实接了前缀保护")
 check("run >= 3" in mt, "单 token 死循环保护仍保留")
 
+# ── 规则 6：译文强调括号清洗 ──────────────────────────────────────────
+check('Regex("【([^】]{1,12})】")' in mt, "清洗正则按约定长度定义")
+check('.replace(BRACKET_EMPHASIS, "$1")' in mt, "decodeTarget 真的接了清洗")
+BRACKET = re.compile(r"【([^】]{1,12})】")
+# 三条全部来自 129 条真机原文的离线同款 ONNX 译文
+for raw in [
+    "那我就在这里和你说【谢谢】吧",
+    "话说【说】的话,",
+    "虽然有好多好多好多好多想跟你说【谢谢】的,但是TikTok...",
+]:
+    got = BRACKET.sub(r"\1", raw)
+    check(got == raw.replace("【", "").replace("】", ""),
+          "去括号且内容一字不改 " + raw[:16], repr(got))
+check(BRACKET.sub(r"\1", "我在学日语呢") == "我在学日语呢", "无括号译文不受影响")
+
 if issues:
     print("RUNTIME_RULES_FAIL", len(issues), "issue(s)")
     sys.exit(1)
 print(
     "RUNTIME_RULES_OK ja_min=%d en_min=%d ja_entries=%d ja_sil=%.2f en_sil=%.2f "
-    "gap=%d hold=%d prefix=%d"
-    % (JA_MIN, EN_MIN, len(entries), JA_SIL, EN_SIL, MAX_GAP, HOLD, PREFIX)
+    "gap=%d hold=%d prefix=%d new109=%d"
+    % (JA_MIN, EN_MIN, len(entries), JA_SIL, EN_SIL, MAX_GAP, HOLD, PREFIX,
+       len(ENTRIES_109))
 )

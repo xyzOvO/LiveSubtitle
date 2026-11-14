@@ -317,7 +317,8 @@ SegmentMerger（1.0.8）── 只把「未完结半句」在 1.2 秒窗口内�
    ▼
 NeuralTranslator（Marian ONNX，en→zh / ja→zh 均走 KV cache；入口先过整串词表）
    ├─ 草稿路线：1.2 秒节流 + 文本没变跳过 + 定稿排队即中止
-   └─ 定稿路线：整句翻译，失败保留原文
+   ├─ 定稿路线：整句翻译，失败保留原文
+   └─ 输出清洗：PUA 私用区 / 【…】强调括号（1.0.9），去掉噪声不改语义
    ▼
 TermGlossary 译文后处理（统一译名）
    ▼
@@ -349,7 +350,9 @@ app/src/main/java/com/wo/livesub/
 │   ├── AsrQualityGate.kt        7 条文本规则拦幻听与复读
 │   ├── SegmentMerger.kt        1.0.8 短段合并：半句攒整句再译，保持 SRT 区间
 │   ├── NeuralTranslator.kt      ★ Marian ONNX 推理：KV cache、逐前缀 fallback、线程配置
-│   ├── ShortGlossary.kt         ja / en 整串词表：单词与固定短语不进模型
+│   ├── ShortGlossary.kt         ja 327 / en 146 条整串词表：短词与固定短语不进模型
+│   │                            1.0.9 按 129 条真机原文离线评测补录 14 条，
+│   │                            真机短路率 15% → 24%，命中即不加载 ONNX
 │   ├── Translator.kt            翻译接口（含 IdentityTranslator 透传）
 │   ├── SentencePieceTokenizer.kt unigram Viterbi / BPE greedy 分词
 │   ├── TermGlossary.kt          译名对照表解析与替换
