@@ -37,6 +37,7 @@ MT_BASE = [
 for route in ('en', 'ja'):
     EXPECTED += [f'assets/mt/{route}/{name}' for name in MT_BASE]
 EXPECTED.append('assets/mt/en/decoder_with_past_model_quantized.onnx')
+EXPECTED.append('assets/mt/ja/decoder_with_past_model_quantized.onnx')
 EXPECTED.append('assets/mt/en/prefix.txt')
 
 issues = []

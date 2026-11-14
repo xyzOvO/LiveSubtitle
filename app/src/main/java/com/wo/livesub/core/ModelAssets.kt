@@ -137,7 +137,13 @@ object ModelAssets {
         if (!parent.exists() && !parent.mkdirs()) {
             throw IOException("cannot create model dir: ${parent.absolutePath}")
         }
-        if (out.exists() && out.length() > 0L) return out.absolutePath
+        // 只判断「存在且非空」会永远复用旧缓存：模型换版后新 asset 拷不进去。
+        // 真机上因此踩过——ja 换成了带 present 输出的 decoder，设备仍在用旧的，
+        // KV cache 路径静默失效、一直走 noCache。改成比对 asset 与目标的字节数。
+        val assetLen = assetLength(context, assetPath)
+        if (out.exists() && out.length() > 0L && (assetLen <= 0L || out.length() == assetLen)) {
+            return out.absolutePath
+        }
         val tmp = File(parent, out.name + ".tmp")
         try {
             context.assets.open(assetPath).use { input ->
@@ -151,6 +157,16 @@ object ModelAssets {
             if (tmp.exists()) tmp.delete()
         }
         return out.absolutePath
+    }
+
+    /**
+     * asset 的未压缩字节数；拿不到（asset 被压缩 / 平台不支持）时返回 -1，调用方退化为旧行为。
+     * onnx/tsv 等已在 build.gradle 的 noCompress 里声明，正常都能拿到。
+     */
+    private fun assetLength(context: Context, assetPath: String): Long = try {
+        context.assets.openFd(assetPath).use { it.length }
+    } catch (_: IOException) {
+        -1L
     }
 
     @Throws(IOException::class)

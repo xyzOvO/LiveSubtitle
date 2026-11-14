@@ -99,6 +99,8 @@ REQUIRED += ASR_FILES
 for route in ("en", "ja"):
     REQUIRED += ["app/src/main/assets/mt/" + route + "/" + name for name in MT_BASE]
 REQUIRED.append("app/src/main/assets/mt/en/decoder_with_past_model_quantized.onnx")
+# ja 的 KV cache 成对图：由 v4 ONNX 反推权重后重导（原始 shun89 是微调前的基座，不等价）
+REQUIRED.append("app/src/main/assets/mt/ja/decoder_with_past_model_quantized.onnx")
 REQUIRED.append("app/src/main/assets/mt/en/prefix.txt")
 
 def check_files():
