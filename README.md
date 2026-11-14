@@ -61,7 +61,7 @@
 
 > **系统要求**：Android 10（API 29）及以上，**arm64-v8a**，安装包约 **707 MB**（模型 648 MB 全在包里）。首次安装需在系统里允许「安装未知来源应用」。
 
-- **[Releases](https://github.com/xyzOvO/LiveSubtitle/releases/latest)** 下载 `app-debug.apk`（debug 签名，可直接安装）
+- **[Releases](https://github.com/xyzOvO/LiveSubtitle/releases/latest)** 下载最新 APK（debug 签名，可直接安装）
 - 也可以自行构建（见 [🛠 构建](#build)），但需要先下载 648 MB 模型，耗时主要在网络上
 
 安装后要放行的四件事，少一件就没字幕：
