@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      故意不声明 android.permission.INTERNET：
+      本 App 的口径是「运行时零联网」，音频与字幕都不出手机。
+      没有 INTERNET 权限时，即便依赖里混入了网络 SDK，系统也会拒绝其联网。
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14 (API 34) 起，mediaProjection 类型的 FGS 必须显式声明此权限。 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      onnxruntime-android:1.29.0 的 AAR manifest 会合并进 INTERNET / ACCESS_NETWORK_STATE；
+      本工程只在设备端读 assets 模型。这里用 tools:node="remove" 从最终合并清单移除，
+      保证 APK 运行时没有联网权限。
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+    <application
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          foregroundServiceType 必须与 startForeground(..., FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+          一致，否则 Android 14+ 抛 MissingForegroundServiceTypeException。
+          注意：不要在这里写 android:allowAudioPlaybackCapture —— 那个属性决定的是
+          「别的 App 能不能抓本 App 的声音」，与本 App 抓别人的声音无关。真正决定能否
+          抓到的是「被抓 App」自己的 allowAudioPlaybackCapture / setAllowedCapturePolicy。
+        -->
+        <service
+            android:name=".service.SubtitleService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+    </application>
+
+</manifest>

@@ -1,0 +1,26 @@
+# 构建产物
+*.iml
+.gradle/
+.idea/
+build/
+app/build/
+local.properties
+
+# 模型权重与 AAR：体积 600 MB+，不入仓库，用 tools/ 下的脚本按需下载
+app/src/main/assets/asr/**/*.onnx
+app/src/main/assets/mt/**/*.onnx
+local-maven/**/*.aar
+models/
+models/*.tar.bz2
+models/*.zip
+
+# APK 与签名材料
+*.apk
+keystore/
+keystore.properties
+
+# 工具与缓存
+.superpowers/
+docs/superpowers/
+__pycache__/
+*.py[cod]

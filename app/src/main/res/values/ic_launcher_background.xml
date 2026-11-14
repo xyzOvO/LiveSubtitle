@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自适应图标背景：与手绘稿边缘蜡笔底色一致，遮罩裁到的地方是它而不是图案。 -->
+<resources>
+    <color name="ic_launcher_background">#F2F5FA</color>
+</resources>

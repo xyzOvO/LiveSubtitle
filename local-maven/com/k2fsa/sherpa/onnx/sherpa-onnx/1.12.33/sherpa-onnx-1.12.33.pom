@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.k2fsa.sherpa.onnx</groupId>
+  <artifactId>sherpa-onnx</artifactId>
+  <version>1.12.33</version>
+  <packaging>aar</packaging>
+  <description>Local placeholder coordinate; put the official AAR next to this POM via tools/install_sherpa_aar.py</description>
+</project>

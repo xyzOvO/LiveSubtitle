@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/overlay_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/overlay_background"
+    android:elevation="4dp">
+
+    <!-- 工具条：左侧把手负责拖动 / 点击进入；右侧按钮调整字号、锁定、隐藏。宽度随窗口。 -->
+    <LinearLayout
+        android:id="@+id/overlay_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/overlay_handle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="30dp"
+            android:gravity="center_vertical"
+            android:text="@string/overlay_handle"
+            android:textColor="#CCFFFFFF"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/btn_font_minus"
+            style="@style/OverlayToolButton"
+            android:text="@string/font_minus" />
+
+        <TextView
+            android:id="@+id/btn_font_plus"
+            style="@style/OverlayToolButton"
+            android:text="@string/font_plus" />
+
+        <!-- 背景透明度循环；纯文字档下这是唯一保持清晰可见的锚点，点它可切回来。 -->
+        <TextView
+            android:id="@+id/btn_appearance"
+            style="@style/OverlayToolButton"
+            android:text="@string/overlay_appearance"
+            android:contentDescription="@string/overlay_appearance_desc" />
+
+        <TextView
+            android:id="@+id/btn_lock"
+            style="@style/OverlayToolButton"
+            android:text="@string/overlay_lock" />
+
+        <TextView
+            android:id="@+id/btn_hide"
+            style="@style/OverlayToolButton"
+            android:text="@string/overlay_hide" />
+    </LinearLayout>
+
+    <!-- 高度 0dp + weight=1：内容区吃掉剩余窗口高度，宽高随 WindowManager.LayoutParams 变化。 -->
+    <ScrollView
+        android:id="@+id/overlay_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false">
+
+        <!-- 不加 ellipsize：历史回看必须能看到完整长句，不能视觉截断。 -->
+        <TextView
+            android:id="@+id/overlay_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="@string/placeholder_subtitle"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp"
+            android:lineSpacingExtra="3dp" />
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/btn_back_latest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:gravity="center"
+        android:padding="3dp"
+        android:text="@string/overlay_back_latest"
+        android:textColor="#F3C98B"
+        android:textSize="11sp" />
+
+    <!-- 底部行：提示 + 右下角尺寸手柄（点击切预设 / 拖动自由调整宽高）。 -->
+    <LinearLayout
+        android:id="@+id/overlay_bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingEnd="2dp">
+
+        <TextView
+            android:id="@+id/overlay_hint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="2dp"
+            android:text="@string/overlay_hint"
+            android:textColor="#99FFFFFF"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/overlay_resize"
+            style="@style/OverlayToolButton"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:minWidth="30dp"
+            android:minHeight="30dp"
+            android:contentDescription="@string/overlay_resize_desc"
+            android:text="@string/overlay_resize"
+            android:textColor="#F3C98B" />
+    </LinearLayout>
+
+    <!-- 隐藏态：只留一个小把手，点击恢复（锁定状态下也能恢复，避免无法解锁）。 -->
+    <TextView
+        android:id="@+id/overlay_mini"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:padding="6dp"
+        android:text="@string/overlay_show"
+        android:textColor="#FFFFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>

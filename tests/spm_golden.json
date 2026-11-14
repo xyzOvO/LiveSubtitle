@@ -1,0 +1,231 @@
+{
+  "routes": {
+    "en": {
+      "hf_model": "Xenova/opus-mt-en-zh",
+      "text": "Hello, everyone. Welcome to the stream.",
+      "pieces": [
+        "▁Hello",
+        ",",
+        "▁everyone",
+        ".",
+        "▁Welcome",
+        "▁to",
+        "▁the",
+        "▁stream",
+        "."
+      ],
+      "spm_ids": [
+        1506,
+        4,
+        2040,
+        6,
+        5223,
+        8,
+        3,
+        13667,
+        6
+      ],
+      "mapped_ids": [
+        3828,
+        2,
+        4129,
+        6,
+        12907,
+        9,
+        3,
+        37047,
+        6
+      ],
+      "trainer": {
+        "model_type": 1,
+        "unk_id": 0,
+        "bos_id": 1,
+        "eos_id": 2,
+        "pad_id": -1,
+        "unk_penalty": -24.407264709472656
+      },
+      "config": {
+        "decoder_start": 65000,
+        "eos": 0,
+        "pad": 65000,
+        "vocab_size": 65001
+      },
+      "pair": "en_zh"
+    },
+    "en_ja": {
+      "hf_model": "Xenova/opus-mt-en-jap",
+      "text": "Hello, everyone. Welcome to the stream.",
+      "pieces": [
+        "▁He",
+        "ll",
+        "o",
+        ",",
+        "▁everyone",
+        ".",
+        "▁We",
+        "l",
+        "come",
+        "▁to",
+        "▁the",
+        "▁stream",
+        "."
+      ],
+      "spm_ids": [
+        78,
+        177,
+        1129,
+        3,
+        726,
+        7,
+        475,
+        27,
+        8407,
+        8,
+        4,
+        3346,
+        7
+      ],
+      "mapped_ids": [
+        132,
+        4204,
+        3407,
+        2,
+        1329,
+        4,
+        813,
+        29,
+        37302,
+        14,
+        3,
+        8285,
+        4
+      ],
+      "trainer": {
+        "model_type": 1,
+        "unk_id": 0,
+        "bos_id": 1,
+        "eos_id": 2,
+        "pad_id": -1,
+        "unk_penalty": -27.017641067504883
+      },
+      "config": {
+        "decoder_start": 46275,
+        "eos": 0,
+        "pad": 46275,
+        "vocab_size": 46276
+      },
+      "pair": "en_ja"
+    },
+    "ja": {
+      "hf_model": "ruozhi521/shiyin-mt-ja-zh-onnx",
+      "text": "こんにちは、みなさん。配信を始めます。",
+      "pieces": [
+        "▁こんにちは",
+        "、",
+        "みなさん",
+        "。",
+        "配信",
+        "を始め",
+        "ます",
+        "。"
+      ],
+      "spm_ids": [
+        15101,
+        53812,
+        24030,
+        53809,
+        15526,
+        11981,
+        8,
+        53809
+      ],
+      "mapped_ids": [
+        15101,
+        53812,
+        24030,
+        53809,
+        15526,
+        11981,
+        8,
+        53809
+      ],
+      "trainer": {
+        "model_type": 2,
+        "unk_id": 1,
+        "bos_id": -1,
+        "eos_id": 0,
+        "pad_id": 65000,
+        "unk_penalty": -65007.0
+      },
+      "config": {
+        "decoder_start": 65000,
+        "eos": 0,
+        "pad": 65000,
+        "vocab_size": 65001
+      },
+      "pair": "ja_zh"
+    },
+    "ja_en": {
+      "hf_model": "Xenova/opus-mt-ja-en",
+      "text": "こんにちは、みなさん。配信を始めます。",
+      "pieces": [
+        "▁こんにちは",
+        "、",
+        "みな",
+        "さん",
+        "。",
+        "配信",
+        "を",
+        "始め",
+        "ます",
+        "。"
+      ],
+      "spm_ids": [
+        3434,
+        31800,
+        5335,
+        368,
+        31815,
+        29242,
+        15,
+        1062,
+        64,
+        31815
+      ],
+      "mapped_ids": [
+        5966,
+        15168,
+        7919,
+        647,
+        5832,
+        53695,
+        22,
+        1823,
+        95,
+        5832
+      ],
+      "trainer": {
+        "model_type": 1,
+        "unk_id": 0,
+        "bos_id": 1,
+        "eos_id": 2,
+        "pad_id": -1,
+        "unk_penalty": -28.82429313659668
+      },
+      "config": {
+        "decoder_start": 60715,
+        "eos": 0,
+        "pad": 60715,
+        "vocab_size": 60716
+      },
+      "pair": "ja_en"
+    }
+  },
+  "note": "Official SentencePieceProcessor EncodeAsPieces; Kotlin tokenizer must match these pieces.",
+  "aliases": {
+    "en_zh": "en",
+    "ja_zh": "ja",
+    "en_ja": "en_ja",
+    "ja_en": "ja_en"
+  }
+}

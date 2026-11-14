@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="deep_teal">#2d5b63</color>
+    <color name="mist">#f4f8f6</color>
+    <color name="ink_teal">#203b40</color>
+    <color name="mint">#a9d8cc</color>
+    <color name="apricot">#f3c98b</color>
+    <color name="blush">#e6b7b0</color>
+    <color name="pale_blue">#b8c9ed</color>
+    <color name="muted">#557077</color>
+    <color name="card">#FFFFFFFF</color>
+    <color name="disabled">#889AA0</color>
+</resources>
