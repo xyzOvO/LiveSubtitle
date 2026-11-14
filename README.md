@@ -390,6 +390,8 @@ app/src/main/java/com/wo/livesub/
 
 [MIT](LICENSE) © 2026 古井枯塘
 
+代码是 MIT；随包的模型权重（whisper / ReazonSpeech / Silero / Marian）归上游所有，逐项归属见 [NOTICE.md](NOTICE.md)。
+
 ---
 
 <a id="repo"></a>

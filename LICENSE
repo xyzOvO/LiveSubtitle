@@ -19,14 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-注意：本许可证只覆盖本仓库的源代码。app/src/main/assets/ 下随包分发的模型权重
-（whisper / ReazonSpeech zipformer / Silero VAD / Marian）版权归各自上游项目所有，
-遵循其各自的许可证；再分发前请自行核对上游条款。
-
-Note: this license covers the source code in this repository only. The model
-weights distributed under app/src/main/assets/ (whisper, ReazonSpeech zipformer,
-Silero VAD, Marian) are copyright their respective upstream projects and remain
-under their own licenses. Verify upstream terms before redistributing.
