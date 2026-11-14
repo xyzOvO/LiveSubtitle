@@ -66,11 +66,37 @@ class NeuralTranslator private constructor(
     private val runLock = java.util.concurrent.locks.ReentrantLock()
     @Volatile private var closed = false
 
-    override fun translate(source: String, isStale: () -> Boolean, onPartial: ((String) -> Unit)?): String {
+    /**
+     * 整句译文缓存（LRU）。贪心解码是确定性的：同样的原文必然得到同样的译文，
+     * 所以命中直接返回不会改变任何输出，只是把一次 encoder+decoder 省掉。
+     * 读写全在 [runLock] 内，天然串行，不需要额外同步。
+     */
+    private val memo = object : LinkedHashMap<String, String>(MT_MEMO_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean =
+            size > MT_MEMO_SIZE
+    }
+
+    override fun translate(
+        source: String,
+        isStale: () -> Boolean,
+        onPartial: ((String) -> Unit)?,
+        cacheable: Boolean
+    ): String {
         runLock.lock()
         try {
             if (closed) throw IllegalStateException("translator closed")
-            return translateLocked(source, isStale, onPartial)
+            val key = if (cacheable) source.trim() else ""
+            if (key.isNotEmpty()) {
+                memo[key]?.let { hit ->
+                    // 命中也要守纪律：这句已经被更新的定稿取代时不能把旧译文送出去。
+                    if (isStale()) throw StaleTranslationException()
+                    Log.i(PERF_TAG, "memo hit chars=${key.length}")
+                    return hit
+                }
+            }
+            val out = translateLocked(source, isStale, onPartial)
+            if (key.isNotEmpty() && out.isNotBlank() && out != source) memo[key] = out
+            return out
         } finally {
             runLock.unlock()
         }
@@ -499,6 +525,11 @@ class NeuralTranslator private constructor(
          * 这组数字由真机 A/B 决定，改之前先看 LiveSubPerf 的 sentenceMs。
          */
         private const val MT_THREADS = 2
+        /**
+         * 整句译文 LRU 容量。刻意压小：命中的主力是「对 / 好的 / 我们来看」这类口头禅，
+         * 几十条就够覆盖相邻几分钟的复现，再大只是白占内存。
+         */
+        private const val MT_MEMO_SIZE = 64
         private const val UNK_ID = 1L
         private const val PERF_TAG = "LiveSubPerf"
         private val SPACE_BEFORE_PUNCT = Regex("\\s+([，。！？、；：,.!?;:])")

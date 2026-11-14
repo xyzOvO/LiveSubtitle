@@ -558,7 +558,12 @@ class SubtitleService : Service(), AsrListener {
             val out = try {
                 // 草稿必须能被定稿打断：以前写死 isStale={false}，定稿要等草稿跑完才能拿到
                 // ONNX 会话，既拖慢 sentenceMs 又白烧一次 CPU。
-                engine.translate(text, isStale = { latestRequested.get() != activeVersion.get() })
+                // 草稿不进译文缓存：它每 1.2 秒变一次、几乎不重复，进去只会挤掉真正会复现的整句。
+                engine.translate(
+                    text,
+                    isStale = { latestRequested.get() != activeVersion.get() },
+                    cacheable = false
+                )
             } catch (_: Throwable) {
                 ""
             }

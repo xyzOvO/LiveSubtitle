@@ -12,17 +12,29 @@ class TranslationTimeoutException : RuntimeException("translation deadline excee
  * @param isStale 每一步解码前检查：若已有更新的定稿句子，抛 [StaleTranslationException]。
  * @param onPartial 增量译文回调（A4 首字即显）：解码未结束也可把已生成的译文前缀送到浮层，
  *                  调用方负责在定稿、失败、作废时清空。传 null 时行为与旧版一致。
+ * @param cacheable 是否允许复用同一原文的历史译文。**草稿句要传 false**：草稿每 1.2 秒变一次、
+ *                  几乎不会重复，进缓存只会把真正会复现的整句挤出去。
  */
 interface Translator {
     val label: String
-    fun translate(source: String, isStale: () -> Boolean, onPartial: ((String) -> Unit)? = null): String
+    fun translate(
+        source: String,
+        isStale: () -> Boolean,
+        onPartial: ((String) -> Unit)? = null,
+        cacheable: Boolean = true
+    ): String
     fun close()
 }
 
 /** 源语 == 目标语：不加载 MT，直接保留原文；仍参与取消/超时纪律。 */
 class IdentityTranslator : Translator {
     override val label: String = "identity"
-    override fun translate(source: String, isStale: () -> Boolean, onPartial: ((String) -> Unit)?): String {
+    override fun translate(
+        source: String,
+        isStale: () -> Boolean,
+        onPartial: ((String) -> Unit)?,
+        cacheable: Boolean
+    ): String {
         if (isStale()) throw StaleTranslationException()
         return source
     }
@@ -43,7 +55,12 @@ class GlossaryTranslator(private val lang: String = "ja") : Translator {
 
     private val maxKeyLength: Int = dict.maxOf { it.first.length }
 
-    override fun translate(source: String, isStale: () -> Boolean, onPartial: ((String) -> Unit)?): String {
+    override fun translate(
+        source: String,
+        isStale: () -> Boolean,
+        onPartial: ((String) -> Unit)?,
+        cacheable: Boolean
+    ): String {
         if (isStale()) throw StaleTranslationException()
         if (lang == "en") return translateEnglishWords(source)
         val out = StringBuilder()

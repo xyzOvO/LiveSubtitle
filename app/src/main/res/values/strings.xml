@@ -7,7 +7,7 @@
     <string name="export_srt">导出 SRT</string>
     <string name="retry_translation">补译上一句</string>
     <string name="grant_overlay">开启悬浮窗权限</string>
-    <string name="status_idle">未启动 · 运行时零联网</string>
+    <string name="status_idle">未启动 · 零联网 · 点「开始字幕」并授权整个屏幕</string>
     <string name="status_waiting_permission">等待录音 / 悬浮窗 / 投屏授权</string>
     <string name="status_capture">采集中 · %1$s → %2$s</string>
     <string name="status_recording">采集中 · 英语 → 中文</string>
@@ -86,4 +86,6 @@
     <string name="repo_url">https://github.com/xyzOvO/LiveSubtitle</string>
     <string name="repo_link">github.com/xyzOvO/LiveSubtitle · 查看新版本</string>
     <string name="repo_copied">地址已复制：github.com/xyzOvO/LiveSubtitle</string>
+
+    <string name="start_hint">点「开始字幕」后系统会问录制范围，必须选「整个屏幕」并确认</string>
 </resources>

@@ -16,8 +16,8 @@ android {
         targetSdk = 34
         // versionCode 必须随每次装机变化：MIUI 桌面按 versionCode 缓存图标，
         // 版本号不变时换了图标也不会刷新（换图标后仍显示旧图的直接原因）。
-        versionCode = 101
-        versionName = "1.0.1"
+        versionCode = 102
+        versionName = "1.0.2"
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
